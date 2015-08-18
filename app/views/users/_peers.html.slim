@@ -1,0 +1,8 @@
+div
+  h2 Peers
+  ul
+    - for following in @user.followings
+      li
+        =h following.peer.full_name
+        =raw "(#{link_to("remove", following_path(peer_id: following.peer.id), :method => :delete)})"
+

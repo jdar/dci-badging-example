@@ -1,0 +1,13 @@
+div
+  h2 Drag-and-drop
+  ul
+    - for user in @peers
+      li
+        =h user.full_name
+        = form_for(Recognition.new(user: user)) do |f|
+            - #TODO: current_school.badges should be replaced with current_user.can_recognize?(user)
+            - #TODO: should replace select with draggable pictures
+            - context = RecognizePeersContext.new(current_user, current_school.badges, [user])
+            - badges = context.badges_that_can_be_recognized_for_all
+            = f.collection_select(:badge_id, badges,:id, :name, {:prompt=>true},{:onchange => "this.form.submit()"})
+            = f.hidden_field :user_id

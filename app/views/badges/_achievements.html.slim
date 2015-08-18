@@ -1,0 +1,10 @@
+div
+  h2 Achievements
+  - achievements = @user.badges.tagged_with("s:achievement")
+  - if achievements.empty?
+    p EMPTY! #TODO: Start all new users off with one badge.
+    p THIS SHOULD NEVER HAPPEN
+  ul
+    - for badge in achievements 
+      li
+        = image_tag badge.filename, title: badge.title, alt: badge.name, class: "badge"

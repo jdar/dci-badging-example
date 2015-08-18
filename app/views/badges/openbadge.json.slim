@@ -1,0 +1,6 @@
+- #TODO: conform to OpenBadges standard
+- # https://github.com/openbadges/openbadges-specification/blob/master/Assertion/latest.md
+- json = @badge.as_json(only: Badge::SPECIFICATION_ATTRS)
+- json[:image] = image_url(@badge.filename,digest: false)
+- json[:tags] = @badge.tags.non_namespaced.map(&:to_s)
+=raw json.to_json

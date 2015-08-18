@@ -1,0 +1,20 @@
+p#notice = notice
+p
+  = image_tag @badge.filename, title: @badge.title, alt: @badge.name, class: "badge"
+p
+  strong Name:
+  = @badge.name
+p
+  strong Tags: 
+  = raw @tags.map { |t| link_to t, tag_path(t) }.join(', ')
+p
+  strong Description: 
+  = @badge.description
+p
+  strong Points:
+  = @badge.points
+
+- if current_user.can_edit_badge?(@badge)
+  = link_to 'Edit', edit_badge_path(@badge) 
+  '|
+= link_to 'Back', badges_path

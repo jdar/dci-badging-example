@@ -1,0 +1,26 @@
+h1 Badges
+
+table
+  thead
+    tr
+      th Image
+      th Name
+      th Description
+      th Points
+      - if @can_edit_any_badge 
+        th
+
+  tbody
+    - @badges.each do |badge|
+      tr
+        td = link_to image_tag(badge.filename), badge
+        td = link_to badge.name, badge
+        td = badge.description
+        td = badge.points
+        - if current_user.can_edit_badge?(badge)
+          td = link_to 'Edit', edit_badge_path(badge)
+
+br
+
+- if @can_edit_any_badge
+  = link_to 'New Badge', new_badge_path

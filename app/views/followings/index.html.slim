@@ -1,0 +1,23 @@
+h1 Listing followings
+
+table
+  thead
+    tr
+      th User
+      th Peer
+      th
+      th
+      th
+
+  tbody
+    - @followings.each do |following|
+      tr
+        td = following.user_id
+        td = following.peer_id
+        td = link_to 'Show', following
+        td = link_to 'Edit', edit_following_path(following)
+        td = link_to 'Destroy', following, data: {:confirm => 'Are you sure?'}, :method => :delete
+
+br
+
+= link_to 'New Shared class', new_following_path

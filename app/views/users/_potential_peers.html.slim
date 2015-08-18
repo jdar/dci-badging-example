@@ -1,0 +1,11 @@
+div
+  h2 Following: 
+  - #TODO: recommend subset
+  - recommended_follow_users = users
+  ul
+    - for user in recommended_follow_users
+      li
+        =h user.full_name
+        - unless current_user.peers.include?(user)
+          - #TODO 'add' link should require specifying time?
+          =raw "(#{ link_to("Add", followings_path(peer_id: user.id), method: :post) })"

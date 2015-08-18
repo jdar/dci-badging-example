@@ -1,0 +1,10 @@
+name,filename,points,tag_list
+Hummingbird Kung Fu,hummingbird.png,10,"s:default"
+Learn Haduken,rank-up.png,,"s:default,s:achievement"
+Panda Kung Fu,panda.png,,"s:default"
+Google Fu,web-code.png,10,"programming,computers"
+Snatch Pebble; Become Master,article.png,,"s:achievement"
+Black Belt,analytics.png,,"s:achievement"
+Penguin Kung Fu,penguin.png,10,"s:points"
+Learn Location of Chuck Norris,local.png,"s:admin-only",
+Dean's List,red-apple.png,,"s:achievement"

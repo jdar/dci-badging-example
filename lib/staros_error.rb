@@ -1,0 +1,2 @@
+class StarosError < StandardError
+end

@@ -1,0 +1,9 @@
+first_name,last_name,id,email,password
+Young,Grasshopper,1,yg@foo.com,password
+Lisa,Simpson,2,ls@foo.com,password
+Milhouse,Van Houten,3,mvh@foo.com,password
+Rod,Flanders,4,rf@foo.com,password
+Todd,Flanders,5,tf@foo.com,password
+Ralph,Wiggum,6,rw@foo.com,password
+Sherri,Botsford,7,sb@foo.com,password
+Terri,Bottsford,8,tb@foo.com,password

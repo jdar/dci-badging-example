@@ -1,0 +1,12 @@
+div
+  h2 Recognize Peers 
+  ul
+    = form_tag recognitions_path, method: :post do
+      - opts = @recognizeable_badges.inject(Hash.new{|h,k| h[k]=[]}){|acc,b| acc[b.category_label]; acc[b.category_label] << [b.name,b.id]; acc }
+      - #TODO: fieldChooser can be modified to drag-and-drop images?
+      - #TODO: categories
+      = select_tag("recognitions[badge_ids]", grouped_options_for_select(opts), {multiple: true})
+      em (will be applied to all students)
+      - for user in current_user.peers
+        = hidden_field_tag "recognitions[user_ids][]", user.id
+      = submit_tag "Recognize All Peers"

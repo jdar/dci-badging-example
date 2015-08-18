@@ -1,0 +1,10 @@
+div
+  h2 Points
+  - pointy = @user.badges.tagged_with("s:points")
+  - if pointy.empty?
+    p EMPTY! #TODO: ICON
+    p You are out of points.
+  ul
+    - for badge in pointy
+      li
+        = image_tag badge.filename, title: badge.title, alt: badge.name, class: "badge"

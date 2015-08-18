@@ -1,0 +1,20 @@
+legend
+  = t('users.profile')
+dl.dl-horizontal
+  dt= t('users.full_name')
+  dd= @user.full_name
+  dt= t('users.email')
+  dd= @user.email
+  dt= t('users.account')
+  dd= "$ #{@user.account}"
+legend
+  = t('site.title')
+
+= render('badges/achievements')
+= render('badges/points')
+
+# TODO: restrict by role
+= render('peers')
+
+# TODO: restrict by role
+= render('potential_peers')

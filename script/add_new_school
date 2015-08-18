@@ -1,0 +1,171 @@
+#!/usr/bin/env ruby
+require 'pathname'
+require 'csv' #or Roo if you want to use XLS
+
+
+=begin
+  USAGE:
+
+  put this file in your rails #{Rails.root}/scripts folder. 
+  run this file like this:
+   SCHOOL_DIR=input/chucknorris rails r scripts/add_new_school 
+
+  The folder school dir is required to have files of a particular name and format. See code below, or just run to find out the errors.
+=end
+
+def csv_parse(path)
+  #assume, nay, require headers in each file.
+  CSV.parse(path.read, headers: true, skip_blanks: true).delete_if { |row| row.to_hash.values.all?(&:blank?) } 
+end
+
+school_dir = Pathname.new(ENV["SCHOOL_DIR"] || raise("point me towards some input files. E.g., SCHOOL_DIR=input/foo"))
+
+begin
+thoughtleader_raw_data = csv_parse(school_dir + "thoughtleaders.csv")
+mentor_raw_data = csv_parse(school_dir + "mentors.csv")
+non_mentor_raw_data = csv_parse(school_dir + "non_mentors.csv")
+
+badge_raw_filenames= (school_dir + "badges").entries.map(&:to_s) - ["readme.txt",".",".."]
+shared_badge_raw_filenames= Pathname.new("app/assets/schools/shared/badges").entries.map(&:to_s) - ["readme.txt",".",".."]
+       #"." is an artifact of the way "#entries" method works
+
+badge_raw_data = csv_parse(school_dir + "badges.csv") rescue {}
+
+
+#used to predict which non_mentors to show.
+location_raw_data = csv_parse(school_dir + "locations.csv")
+initial_followings_raw_data = csv_parse(school_dir + "initial_followings.csv") rescue {}
+
+
+def strip_id(attrs) 
+  attrs.except(:id) 
+end
+School.transaction do
+
+  school_raw_data = CSV.parse((school_dir + "school.csv").read, headers: true)
+  if school_raw_data.length != 1
+    raise "the school file must have one line, in addition to headers in the proscribed format"
+  end
+
+
+  school_attrs = school_raw_data.first.to_hash.symbolize_keys
+
+  #example of some CLI overriding.
+  school_attrs[:name] = ENV["SCHOOL_NAME"] || school_attrs[:name]
+  school = School.where(strip_id(school_attrs).merge param: school_dir.basename.to_s).create!
+
+  locations = location_raw_data.inject({}) do |acc,row|
+    #...
+    location_attrs = row.to_hash.symbolize_keys
+    location_attrs
+
+    Rails.logger.info "new location_attrs: #{location_attrs.inspect}"
+    acc.merge location_attrs[:id] => Location.create!(strip_id(location_attrs).merge school_id: school.id)
+  end
+
+  badges = badge_raw_data.inject({}) do |acc,row|
+    existing_shared_badge = nil
+    #...
+    badge_attrs = row.to_hash.symbolize_keys
+    filename = badge_attrs[:filename] || raise("filename required")
+    if badge_attrs[:points].to_i > 0
+      badge_attrs[:tag_list] = badge_attrs[:tag_list].to_s + ",s:points"
+    end
+    badge_attrs[:points] = badge_attrs[:points].to_i
+    if shared_badge_raw_filenames.include?(filename)
+      existing_shared_badge = Badge.where(:filename=>filename).first
+
+      badge_attrs[:tag_list] = badge_attrs[:tag_list].to_s + ",s:shared"
+    elsif badge_raw_filenames.include?(filename)
+      #ok
+    else
+      raise "img not found"
+    end
+
+    Rails.logger.info "new badge_attrs: #{badge_attrs.inspect}"
+
+    new_or_existing_badge = if existing_shared_badge
+      STDOUT.puts "warning: skipping '#{filename}'; using already (existing) badge with same filename:  #{existing_shared_badge.inspect}."
+      existing_shared_badge
+    else
+      Badge.create!(strip_id(badge_attrs).merge school_id: school.id)
+    end
+    acc.merge badge_attrs[:name] => new_or_existing_badge
+  end
+
+  count = school.badges.tagged_with(["s:achievement","s:default"]).length
+  unless count > 0
+    raise "at least one default achievement required."
+  end
+  count = school.badges.tagged_with(["s:points","s:default"]).length
+  unless count > 0
+    raise "at least one default point badge required."
+  end
+
+  badge_asset_path = "app/assets/schools/#{school.param}/badges"
+  unless File.exist?(badge_asset_path)
+    if Rails.env.development?
+      FileUtils.mkdir_p "app/assets/schools/#{school.param}"
+      FileUtils.cp_r((school_dir + "badges"), badge_asset_path)
+    end
+  end
+
+  thoughtleaders = thoughtleader_raw_data.inject({}) do |acc,row|
+    #...
+    thoughtleader_attrs = row.to_hash.symbolize_keys
+    thoughtleader_attrs
+
+    Rails.logger.info "new thoughtleader_attrs: #{thoughtleader_attrs.inspect}"
+    leader = User.create!(strip_id(thoughtleader_attrs).merge school_id: school.id, role: "thoughtleader")
+
+    leader.badges << badges["Snatch Pebble; Become Master"]
+    acc.merge thoughtleader_attrs[:id] => leader
+  end
+  thoughtleaders.values.each(&:save)
+
+  mentors = mentor_raw_data.inject({}) do |acc,row|
+    #...
+    mentor_attrs = row.to_hash.symbolize_keys
+    mentor_attrs
+
+    Rails.logger.info "new mentor_attrs: #{mentor_attrs.inspect}"
+    mentor = User.create!(strip_id(mentor_attrs).merge school_id: school.id)
+
+    mentor.badges << badges["Snatch Pebble; Become Master"]
+
+    acc.merge mentor_attrs[:id] => mentor
+  end
+  mentors.values.each(&:save)
+  
+  non_mentors = non_mentor_raw_data.inject({}) do |acc,row|
+    #...
+    non_mentor_attrs = row.to_hash.symbolize_keys
+    non_mentor_attrs
+
+    Rails.logger.info "new non_mentor_attrs: #{non_mentor_attrs.inspect}"
+    acc.merge non_mentor_attrs[:id] => User.create!(strip_id(non_mentor_attrs).merge school_id: school.id)
+  end
+
+  initial_followings_raw_data.each do |row|
+    m = mentors[row["mentor_id"]]
+    p = non_mentors[row["peer_id"]]
+    unless m.peers.include?(p)
+      m.peers << p
+    end
+  end
+  mentors.values.each(&:save)
+
+  #the Tom Anderson; starts out with everybody.
+  thoughtleaders.values.each do |leader|
+    leader.peers = mentors.values + non_mentors.values
+    leader.save
+  end
+end
+
+rescue Exception=>e
+  if ENV["FAIL_SILENTLY"]
+    #...
+  else
+    raise e
+  end
+end

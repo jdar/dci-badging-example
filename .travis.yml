@@ -1,0 +1,28 @@
+language: ruby
+rvm:
+  - 2.2.2
+
+addons:
+  code_climate:
+    repo_token:
+
+env:
+  - RUBY_GC_MALLOC_LIMIT=90000000 RUBY_FREE_MIN=200000 SECURITY_SECRET_TOKEN=traviscitraviscitraviscitraviscitravisci
+
+services:
+  - postgresql
+  - redis-server
+
+before_script:
+  - cp config/database.travis.yml config/database.yml
+  - psql -c "CREATE USER code_ambush WITH PASSWORD 'code_ambush';" -U postgres
+  - psql -c "DROP DATABASE IF EXISTS code_ambush_test;" -U postgres
+  - psql -c "CREATE DATABASE code_ambush_test ENCODING 'utf8';" -U postgres
+  - bundle exec rake db:migrate test:prepare
+
+script:
+  - bundle exec cucumber
+  - bundle exec rubocop app features -R --format simple
+
+cache:
+  bundler: true

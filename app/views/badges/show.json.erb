@@ -1,0 +1,43 @@
+// conforming to 'jsonapi' standard
+// NOTE TO RICHARD: 'jsonapi' is very different from regular json. look it up. 
+{
+  "data": [{
+    "type": "badges",
+    "id": "#<%=raw @badge.id %>",
+    "attributes": {
+      "title": "<%=raw @badge.name %>"
+    },
+    "links": {
+      "self": "<%=raw url_for @badge %>"
+    },
+    "relationships": {
+      "school": {
+        "links": {
+          "self": "<%=raw url_for @badge %>/relationships/school",
+          "related": "<%=raw url_for @badge %>/school"
+        },
+        "data": { "type": "schools", "id": "<%=raw @badge.school.id %>" }
+      },
+      "tags": {
+        "links": {
+          "self": "<%=raw url_for @badge %>/relationships/tags",
+          "related": "<%=raw url_for @badge %>/tags"
+        },
+        "data": <%=raw @tags.map{|t| 
+          {
+            type: "tags", 
+            id: t.id.to_s 
+          }
+        }.as_json %>
+      }
+    }
+  }],
+  "included": <%=raw @tags.map{|t| 
+    {
+      type: "tags", 
+      id: t.id.to_s,
+      attributes: {name: t.name},
+      links: {:self=> tag_url(t) }
+    }
+  }.as_json %>
+}
